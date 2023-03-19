@@ -5,8 +5,10 @@
 #
 
 from pyrogram import idle
-from utils import load_plugin
+from utils import load_plugin, Packages
 from utils.config import client, logger, prefix
+
+Packages('convopyro')
 
 if __name__ == "__main__":
     load_plugin()

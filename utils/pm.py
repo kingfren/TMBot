@@ -45,7 +45,7 @@ def get_plugins():
         text = get_url(i)
         desc = re.search('(?<=(\'\'\'|\"\"\")).+(?=(\'\'\'|\"\"\"))', text)
         ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
-        if desc is not None:
+        if desc is not None and ver is not None:
             dct[Path(i).stem] = {'url': i, 'desc': desc.group(0), 'ver': ver.group(0)}
 
     return dct
