@@ -33,7 +33,7 @@ def load_plugin():
 
         ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
 
-        if v.parse(version) >= v.parse(ver.group(0)):
+        if v.parse(version) != v.parse(ver.group(0)):
             import_plugin(module_path)
         else:
             logger.error(f'failed to import {module_path}: Version Mismatch Error')
