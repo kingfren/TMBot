@@ -72,25 +72,29 @@ async def handler(client, message):
     '''
 1、查看已安装插件列表：
 `pm`
+
 2、查看插件、指令信息：
 `pm help <插件名>/<指令>`
+
 3、升级程序：
 `pm update`
-4、升级已安装插件：
-`pm update plugin`
-5、获取可用插件列表：
+
+4、获取可用插件列表：
 `pm list`
-6、安装插件：
+
+5、安装插件：
     安装部分插件：
     `pm add <插件 1> <插件 2> <插件 3>`
     安装所有插件：
     `pm add all`
-7、删除插件：
+
+6、删除插件：
     删除已安装插件：
     `pm del <插件名>`
     删除所有已安装插件：
     `pm del all`
-8、重启：
+
+7、重启：
 `pm restart`
     '''
     args = get_args(message)
@@ -236,48 +240,43 @@ async def handler(client, message):
             await message.edit(content)
             return
 
-        if args.get(2) and args.get(2) == 'plugin':
-            await message.edit(content + "获取插件中...")
-            dct = get_plugins()
-            lst = list(dct.keys())
-            plugins = PLUGINS.dct()
-            content += '升级插件：\n'
-            await message.edit(content)
-            for plugin in plugins:
-                if plugins[plugin]['type'] != 'sys':
-                    if plugin in lst:
-                        content += f"`{plugin}`...\n"
-                        await message.edit(content)
-                        await asyncio.sleep(2)
-                        if await install(dct[plugin]['url'], plugin):
-                            content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓ \n")
-                            await message.edit(content)
-                        else:
-                            content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗ \n")
-                            await message.edit(content)
-            await message.edit(content + f'\n发送 `{prefix}pm` 获取帮助~')
-            await del_msg(message)
-
-        else:
-            content += '获取更新中...'
-            await message.edit(content)
-            await asyncio.sleep(2)
-            try:
-                update = git.cmd.Git(base_dir)
-                result = update.pull()
-                if result == 'Already up to date.':
-                    content = content.replace('获取更新中...', '暂无更新~')
-                elif result.find("Fast-forward") > -1:
-                    content = content.replace('获取更新中...', f'''更新完成，即将重启：\n```{result}```''')
+        await message.edit(content + "升级插件中...")
+        dct = get_plugins()
+        lst = list(dct.keys())
+        plugins = PLUGINS.dct()
+        content += '升级插件：\n'
+        await message.edit(content)
+        for plugin in plugins:
+            if plugins[plugin]['type'] != 'sys':
+                if plugin in lst:
+                    content += f"`{plugin}`...\n"
                     await message.edit(content)
-                    await del_msg(message, 3)
-                    restart()
-                else:
-                    content = content.replace('获取更新中...', f'''更新出错：\n```{result}```''')
-            except Exception as e:
-                content = content.replace('获取更新中...', f'''更新出错：```\n{e}```''')
-            await message.edit(content)
-            await del_msg(message)
+                    await asyncio.sleep(2)
+                    if await install(dct[plugin]['url'], plugin):
+                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓ \n")
+                        await message.edit(content)
+                    else:
+                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗ \n")
+                        await message.edit(content)
+
+        content += '\n更新程序中...'
+        await message.edit(content)
+        try:
+            update = git.cmd.Git(base_dir)
+            result = update.pull()
+            if result == 'Already up to date.':
+                content = content.replace('\n更新程序中...', '\n程序暂无更新~')
+            elif result.find("Fast-forward") > -1:
+                content = content.replace('\n更新程序中...', f'''\n更新完成，即将重启：\n```{result}```''')
+                await message.edit(content)
+                await del_msg(message, 3)
+                restart()
+            else:
+                content = content.replace('\n更新程序中...', f'''\n更新出错：\n```{result}```''')
+        except Exception as e:
+            content = content.replace('\n更新程序中...', f'''\n更新出错：```\n{e}```''')
+        await message.edit(content)
+        await del_msg(message)
 
     async def get_help(content):
         if not args.get(2):
@@ -346,7 +345,6 @@ async def handler(client, message):
         await message.edit(content)
         await del_msg(message)
 
-        
     match args.get(1):
         case 'help':
             await get_help(content)
@@ -362,4 +360,3 @@ async def handler(client, message):
             await restartd()
         case _:
             await pm(content)
-
