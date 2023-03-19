@@ -238,7 +238,6 @@ async def handler(client, message):
                         if plugins[plugin]['ver'] != dct[plugin]['ver']:
                             content += f"`{plugin}`...\n"
                             await message.edit(content)
-                            await asyncio.sleep(2)
                             if await install(dct[plugin]['url'], plugin):
                                 content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓：更新成功~ \n")
                                 await message.edit(content)
@@ -248,6 +247,7 @@ async def handler(client, message):
                         else:
                             content += f"`{plugin}`：暂无更新~ \n"
                             await message.edit(content)
+                await asyncio.sleep(2)
 
         content += '\n更新程序中...'
         await message.edit(content)
