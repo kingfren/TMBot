@@ -1,7 +1,10 @@
+import re
 from pathlib import Path
 from importlib import import_module
 
-from utils.config import plugins_dir, logger
+from packaging import version as v
+
+from utils.config import version, plugins_dir, logger
 from utils.utils import scheduler, PLUGINS
 
 scheduler.start()
@@ -24,4 +27,13 @@ def load_plugin():
 
     for path in sorted(Path(root).glob("*.py")):
         module_path = '.'.join(path.parent.parts + (path.stem,))
-        import_plugin(module_path)
+
+        with open(path, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
+
+        if v.parse(version) >= v.parse(ver.group(0)):
+            import_plugin(module_path)
+        else:
+            logger.error(f'failed to import {module_path}: Version Mismatch Error')

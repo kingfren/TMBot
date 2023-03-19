@@ -7,6 +7,7 @@ import asyncio
 import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
+from packaging import version as v
 
 from utils import import_plugin
 from utils.utils import Packages, PLUGINS, scheduler, oncmd
@@ -41,9 +42,11 @@ def get_plugins():
                         for link in a_tags if '.py' in link.get('href')]
 
     for i in urls:
-        content = re.search('(?<=(\'\'\'|\"\"\")).+(?=(\'\'\'|\"\"\"))', get_url(i))
-        if content is not None:
-            dct[Path(i).stem] = {'url': i, 'help': content.group(0)}
+        text = get_url(i)
+        desc = re.search('(?<=(\'\'\'|\"\"\")).+(?=(\'\'\'|\"\"\"))', text)
+        ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
+        if desc is not None:
+            dct[Path(i).stem] = {'url': i, 'desc': desc.group(0), 'ver': ver.group(0)}
 
     return dct
 
@@ -126,7 +129,7 @@ async def handler(client, message):
 
         content += '可用插件列表:\n'
         for i in list(dct.keys()):
-            content += f"`{i}`：{dct[i]['help']}\n"
+            content += f"`{i}`：{dct[i]['desc']}\n"
         await message.edit(content)
         await del_msg(message)
 
@@ -155,12 +158,15 @@ async def handler(client, message):
                 content += f"`{i}`...\n"
                 await message.edit(content)
                 await asyncio.sleep(2)
-                if await install(dct[i]['url'], i):
-                    content = content.replace(f"`{i}`...\n", f"`{i}`...✓ \n")
-                    await message.edit(content)
+                if v.parse(version) >= v.parse(dct[i]['ver']):
+                    if await install(dct[i]['url'], i):
+                        content = content.replace(f"`{i}`...\n", f"`{i}`...✓ \n")
+                        await message.edit(content)
+                    else:
+                        content = content.replace(f"`{i}`...\n", f"`{i}`...✗ ：安装失败\n")
+                        await message.edit(content)
                 else:
-                    content = content.replace(f"`{i}`...\n", f"`{i}`...✗ \n")
-                    await message.edit(content)
+                    content = content.replace(f"`{i}`...\n", f"`{i}`...✗ ：要求版本 {dct[i]['ver']}\n")
                 await asyncio.sleep(1)
             await message.edit(content + f'\n发送 `{prefix}pm` 获取帮助~')
         else:
@@ -169,12 +175,15 @@ async def handler(client, message):
                     content += f"`{i}`...\n"
                     await message.edit(content)
                     await asyncio.sleep(2)
-                    if await install(dct[i]['url'], i):
-                        content = content.replace(f"`{i}`...\n", f"`{i}`...✓ \n")
-                        await message.edit(content)
+                    if v.parse(version) >= v.parse(dct[i]['ver']):
+                        if await install(dct[i]['url'], i):
+                            content = content.replace(f"`{i}`...\n", f"`{i}`...✓ \n")
+                            await message.edit(content)
+                        else:
+                            content = content.replace(f"`{i}`...\n", f"`{i}`...✗ ：安装失败\n")
+                            await message.edit(content)
                     else:
-                        content = content.replace(f"`{i}`...\n", f"`{i}`...✗ \n")
-                        await message.edit(content)
+                        content = content.replace(f"`{i}`...\n", f"`{i}`...✗ ：要求版本 {dct[i]['ver']}\n")
                 else:
                     content += f"`{i}` 不存在~\n"
                     await message.edit(content)
@@ -293,7 +302,7 @@ async def handler(client, message):
         if plugins[plugin]['type'] in ['sys', 'cmd']:
             content += f"命令：`{prefix}{plugins[plugin]['cmd']}`\n"
 
-        content += f"版本：`{plugins[plugin]['ver']}`\n"
+        content += f"版本需求：`{plugins[plugin]['ver']}`\n"
         content += f"插件名：`{plugins[plugin]['name']}`\n\n"
 
         content += f"{plugins[plugin]['help']}\n"

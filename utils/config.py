@@ -6,8 +6,9 @@ import configparser
 from os import path, mkdir, getenv
 
 from pyrogram import Client
+from convopyro import Conversation
 
-version = "4.2.1"
+version = "4.3"
 
 def check_dir(directory):
     if not path.exists(directory):
@@ -55,6 +56,8 @@ client = Client(
     api_hash=api_hash,
     workdir=session_dir
 )
+
+Conversation(client)
 
 def loglevel(level):
     if level == 'WARNING':

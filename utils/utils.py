@@ -59,8 +59,8 @@ class PLUGINS:
             client.remove_handler(plugins[plugin]['handler'], plugins[plugin]['group'])
         else:
             scheduler.remove_job(str(plugins[plugin]['group']))
-        os.remove(plugins[plugin]['file'])
         del plugins[plugin]
+        os.remove(plugins[plugin]['file'])
         logger.info(f'del: {plugin}')
 
     def dct():
