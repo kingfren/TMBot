@@ -247,7 +247,7 @@ async def handler(client, message):
                         else:
                             content += f"`{plugin}`：暂无更新~ \n"
                             await message.edit(content)
-                await asyncio.sleep(2)
+                    await asyncio.sleep(1)
 
         content += '\n更新程序中...'
         await message.edit(content)
