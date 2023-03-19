@@ -31,9 +31,12 @@ def load_plugin():
         with open(path, 'r', encoding='utf-8') as f:
             text = f.read()
 
-        ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
-        import_plugin(module_path)
-        #if v.parse(version) >= v.parse(ver.group(0)):
-        #    import_plugin(module_path)
-        #else:
-        #    logger.error(f'failed to import {module_path}: Version Mismatch Error')
+        try:
+            ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text).group(0)
+        except Exception as e:
+            ver = '0.0'
+
+        if v.parse(version) >= v.parse(ver):
+            import_plugin(module_path)
+        else:
+            logger.error(f'failed to import {module_path}: Version Mismatch Error')

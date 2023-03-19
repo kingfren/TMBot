@@ -1,8 +1,8 @@
-APScheduler==3.10.1
-beautifulsoup4==4.11.2
+Pyrogram==2.0.100
+TgCrypto==1.2.5
+uvloop==0.17.0
 convopyro==0.5
 GitPython==3.1.31
-Pyrogram==2.0.100
-requests==2.25.1
-setuptools==65.6.0
-uvloop==0.17.0
+beautifulsoup4==4.11.2
+requests==2.28.2
+APScheduler==3.10.1
