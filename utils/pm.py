@@ -124,7 +124,7 @@ async def handler(client, message):
         for i in list(dct.keys()):
             content += f"`{i}`：{dct[i]['desc']}\n"
         await message.edit(content)
-        await del_msg(message)
+        await del_msg(message, 60)
 
     async def add(content):
         for i in list(args.keys())[:2]:
