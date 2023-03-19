@@ -6,6 +6,7 @@ import git
 import asyncio
 import requests
 from pathlib import Path
+from ast import literal_eval
 from bs4 import BeautifulSoup
 from packaging import version as v
 
@@ -30,23 +31,15 @@ def get_url(url):
         return r.text
 
 def get_plugins():
-    result = get_url('https://github.com/noreph/TMBot-Plugins')
-    dct = {}
+    result = get_url('https://github.com/noreph/TMBot-Plugins/raw/main/.plugin_list')
 
-    if not result:
+    if result is False:
         return False
 
-    soup = BeautifulSoup(result, 'html.parser')
-    a_tags = soup.find_all('a')
-    urls = ['https://raw.githubusercontent.com' + re.sub('/blob', '', link.get('href')) 
-                        for link in a_tags if '.py' in link.get('href')]
+    dct = literal_eval(result)
 
-    for i in urls:
-        text = get_url(i)
-        desc = re.search('(?<=(\'\'\'|\"\"\")).+(?=(\'\'\'|\"\"\"))', text)
-        ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text)
-        if desc is not None and ver is not None:
-            dct[Path(i).stem] = {'url': i, 'desc': desc.group(0), 'ver': ver.group(0)}
+    for i in dct:
+        dct[i]['url'] = f'https://github.com/noreph/TMBot-Plugins/raw/main/{i}.py'
 
     return dct
 
@@ -66,6 +59,15 @@ async def install(url, plugin):
     else:
         return False
 
+def plist():
+    lst = []
+    plugins = PLUGINS.dct()
+    for plugin in plugins:
+        if plugins[plugin]['type'] in ['cmd', 'sys']:
+            lst.append(plugins[plugin]['cmd'])
+        if plugins[plugin]['type'] != 'sys':
+            lst.append(plugins[plugin]['name'])
+    return lst
 
 @oncmd(cmd='pm')
 async def handler(client, message):
@@ -109,19 +111,6 @@ async def handler(client, message):
         except Exception:
             pass
 
-    def plist():
-        lst = []
-        plugins = PLUGINS.dct()
-        for plugin in plugins:
-            if plugins[plugin]['type'] in ['cmd', 'sys']:
-                lst.append(plugins[plugin]['cmd'])
-            if plugins[plugin]['type'] != 'sys':
-                lst.append(plugins[plugin]['name'])
-        return lst
-
-    async def restartd():
-        restart()
-
     async def get_list(content):
         await message.edit(content + '获取列表中...')
 
@@ -149,11 +138,12 @@ async def handler(client, message):
         await message.edit(content + "获取插件中...")
 
         dct = get_plugins()
-        lst = list(dct.keys())
 
         if not dct:
             await message.edit(content + "插件列表获取失败~")
             return
+
+        lst = list(dct.keys())
 
         content += f"安装：\n"
         await message.edit(content)
@@ -235,29 +225,29 @@ async def handler(client, message):
 
 
     async def update(content):
-        if args.get(2) and args.get(2) != 'plugin':
-            content += '参数错误~'
-            await message.edit(content)
-            return
-
-        await message.edit(content + "升级插件中...")
         dct = get_plugins()
-        lst = list(dct.keys())
         plugins = PLUGINS.dct()
-        content += '升级插件：\n'
-        await message.edit(content)
-        for plugin in plugins:
-            if plugins[plugin]['type'] != 'sys':
-                if plugin in lst:
-                    content += f"`{plugin}`...\n"
-                    await message.edit(content)
-                    await asyncio.sleep(2)
-                    if await install(dct[plugin]['url'], plugin):
-                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓ \n")
-                        await message.edit(content)
-                    else:
-                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗ \n")
-                        await message.edit(content)
+
+        if not (len(plugins) == 1 and 'pm' in plugins):
+            content += '更新插件：\n'
+            await message.edit(content)
+
+            for plugin in plugins:
+                if plugins[plugin]['type'] != 'sys':
+                    if plugin in dct:
+                        if plugins[plugin]['ver'] != dct[plugin]['ver']:
+                            content += f"`{plugin}`...\n"
+                            await message.edit(content)
+                            await asyncio.sleep(2)
+                            if await install(dct[plugin]['url'], plugin):
+                                content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓：更新成功~ \n")
+                                await message.edit(content)
+                            else:
+                                content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗：更新失败~ \n")
+                                await message.edit(content)
+                        else:
+                            content += f"`{plugin}`：暂无更新~ \n"
+                            await message.edit(content)
 
         content += '\n更新程序中...'
         await message.edit(content)
@@ -357,6 +347,7 @@ async def handler(client, message):
         case 'del':
             await delete(content)
         case 'restart':
-            await restartd()
+            await del_msg(message, 1)
+            restart()
         case _:
             await pm(content)

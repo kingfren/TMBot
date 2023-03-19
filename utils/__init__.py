@@ -33,8 +33,8 @@ def load_plugin():
 
         try:
             ver = re.search('(?<=ver\=(\'|\")).+?(?=(\'|\"))', text).group(0)
-        except Exception as e:
-            ver = '0.0'
+        except Exception:
+            ver = '4.0'
 
         if v.parse(version) >= v.parse(ver):
             import_plugin(module_path)
