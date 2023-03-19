@@ -5,7 +5,8 @@
 #
 
 from pyrogram import idle
-from utils import load_plugin, Packages
+from utils import load_plugin
+from utils.utils import Packages
 from utils.config import client, logger, prefix
 
 Packages('convopyro')
