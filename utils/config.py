@@ -9,7 +9,7 @@ from pyrogram import Client
 
 from utils.convopyro import Conversation
 
-version = "4.4.2"
+version = "4.5"
 
 def check_dir(directory):
     if not path.exists(directory):
@@ -31,8 +31,18 @@ check_dir(tmp_dir)
 
 conf = configparser.ConfigParser()
 
+# 替换原来的配置节点名称
+if path.exists(config):
+    with open(config, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+    text = text.replace("[DEFAULT]", "[TMBot]")
+    with open(config, 'w', encoding='UTF-8') as f:
+        f.write(text)
+
 if not path.exists(config):
-    conf['DEFAULT'] = {'name': 'TMBot',
+    conf['TMBot'] = {'desc': 'TMBot 的配置',
+                        'name': 'TMBot',
                         'prefix': '#',
                         'loglevel': 'INFO',
                         'pyrogram_log_level': 'WARNING',
@@ -43,11 +53,11 @@ if not path.exists(config):
 
 conf.read(config)
 
-SESSN = conf['DEFAULT']['name']
-prefix = conf['DEFAULT']['prefix']
-log_level = conf['DEFAULT']['loglevel']
-pyrogram_log_level = conf['DEFAULT']['pyrogram_log_level']
-apscheduler_log_level = conf['DEFAULT']['apscheduler_log_level']
+SESSN = conf['TMBot']['name']
+prefix = conf['TMBot']['prefix']
+log_level = conf['TMBot']['loglevel']
+pyrogram_log_level = conf['TMBot']['pyrogram_log_level']
+apscheduler_log_level = conf['TMBot']['apscheduler_log_level']
 
 uvloop.install()
 

@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import git
+import json
 import asyncio
 import requests
 import importlib
@@ -13,7 +14,9 @@ from packaging import version as v
 
 from utils import import_plugin
 from utils.utils import Packages, PLUGINS, scheduler, oncmd
-from utils.config import client, version, prefix, base_dir, plugins_dir
+from utils.config import client, version, prefix, base_dir, plugins_dir, conf, config
+
+from pyrogram import filters
 
 def get_args(mgs):
     args = {}
@@ -110,7 +113,10 @@ async def handler(client, message):
     删除所有已安装插件：
     `pm del all`
 
-8、重启：
+8、修改配置：
+    `pm set <插件名>`
+
+9、重启：
 `pm restart`
     '''
     args = get_args(message)
@@ -355,6 +361,61 @@ async def handler(client, message):
         await message.edit(content)
         await del_msg(message)
 
+    async def setting(content):
+        async def func(_, __, m):
+            if m.reply_to_message:
+                return m.reply_to_message_id == message.id
+
+        _filter = filters.create(func)
+
+        async def listen():
+            msg = await client.listen.Message(_filter, filters.user(message.from_user.id), timeout = 300)
+            if msg:
+                await client.listen.Cancel(filters.user(message.from_user.id))
+                return msg
+            return False
+
+        conf.read(config)
+        text = str()
+        for i in conf.sections():
+            try:
+                desc = f"：{conf[i]['desc']}"
+            except Exception:
+                desc = ''
+            text += f"`{i}`{desc}\n"
+        await message.edit(content + f"请选一个配置回复进行编辑：\n{text}")
+
+        while True:
+            msg = await listen()
+            if not msg:
+                await del_msg(await message.edit(content + "回复超时，请重试~"))
+                return
+            await msg.delete()
+
+            if msg.text in conf:
+                me = await client.get_me()
+                if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
+                    return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
+
+                global section
+                section = msg.text
+                dct = {x:y for x,y in conf.items(msg.text)}
+                await message.edit(content + f"请按照如下格式回复新配置：\n`{dct}`")
+                continue
+
+            try:
+                global sections
+                sections = json.loads((msg.text).replace("'","\""))
+            except Exception:
+                await del_msg(await message.edit(content + "格式错误，请重试~"))
+                return
+            else:
+                conf[section] = sections
+                with open(config, 'w') as configfile:
+                    conf.write(configfile)
+                await del_msg(await message.edit(content + "修改完成，部分配置需重启后生效~"))
+                return
+
     match args.get(1):
         case 'help':
             await get_help(content)
@@ -366,6 +427,8 @@ async def handler(client, message):
             await add(content)
         case 'del':
             await delete(content)
+        case 'set':
+            await setting(content)
         case 'restart':
             await del_msg(message, 1)
             restart()
