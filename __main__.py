@@ -9,7 +9,7 @@ from utils import load_plugin
 from utils.utils import Packages
 from utils.config import client, logger, prefix
 
-Packages('convopyro TgCrypto')
+Packages('TgCrypto')
 
 if __name__ == "__main__":
     load_plugin()

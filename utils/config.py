@@ -6,7 +6,8 @@ import configparser
 from os import path, mkdir, getenv
 
 from pyrogram import Client
-from convopyro import Conversation
+
+from utils.convopyro import Conversation
 
 version = "4.4.2"
 
