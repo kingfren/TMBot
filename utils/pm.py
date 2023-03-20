@@ -370,8 +370,8 @@ async def handler(client, message):
 
         async def listen(x):
             msg = await client.listen.Message(_filter, filters.user(message.from_user.id), timeout = 300)
+            await client.listen.Cancel(filters.user(message.from_user.id))
             if msg:
-                await client.listen.Cancel(filters.user(message.from_user.id))
                 return x, msg
             return x, False
 
@@ -385,7 +385,7 @@ async def handler(client, message):
             text += f"`{i}`{desc}\n"
         await message.edit(content + f"请选一个配置回复进行编辑：\n{text}")
 
-        for x in range(1):
+        for x in range(2):
             i, msg = await listen(x)
             if not msg:
                 await del_msg(await message.edit(content + "回复超时，请重试~"))
@@ -393,6 +393,7 @@ async def handler(client, message):
             await msg.delete()
 
             if i == 0:
+                print(0)
                 if msg.text in conf:
                     me = await client.get_me()
                     if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
@@ -402,10 +403,10 @@ async def handler(client, message):
                     section = msg.text
                     dct = {x:y for x,y in conf.items(msg.text)}
                     await message.edit(content + f"请按照如下格式回复新配置：\n`{dct}`")
-                    continue
                 else:
                     return await del_msg(await message.edit(content + "配置不存在~"))
             if i == 1:
+                print(1)
                 try:
                     global sections
                     sections = json.loads((msg.text).replace("\'","\""))
