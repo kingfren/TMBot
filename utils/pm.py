@@ -255,7 +255,7 @@ async def handler(client, message):
                             await asyncio.sleep(1)
                     await del_msg(message)
                 else:
-                    await del_msg(await message.edit("未装插件~"))
+                    await del_msg(await message.edit(content + "未装插件~"))
 
             case _:
                 content += '\n更新程序中...'
