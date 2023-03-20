@@ -49,7 +49,7 @@ async def install(url, plugin):
     if packages:
         if not Packages(packages.group()):
             return False
-    with open(f'{plugins_dir}/{plugin}.py', "w") as f:
+    with open(f'{plugins_dir}/{plugin}.py', "w+") as f:
         f.write(content)
     root = 'data/plugins'
     path = Path(root, plugin)
@@ -81,22 +81,25 @@ async def handler(client, message):
 3、升级程序：
 `pm update`
 
-4、获取可用插件列表：
+4、升级插件：
+`pm update plugin`
+
+5、获取可用插件列表：
 `pm list`
 
-5、安装插件：
+6、安装插件：
     安装部分插件：
     `pm add <插件 1> <插件 2> <插件 3>`
     安装所有插件：
     `pm add all`
 
-6、删除插件：
+7、删除插件：
     删除已安装插件：
     `pm del <插件名>`
     删除所有已安装插件：
     `pm del all`
 
-7、重启：
+8、重启：
 `pm restart`
     '''
     args = get_args(message)
@@ -228,45 +231,48 @@ async def handler(client, message):
         dct = get_plugins()
         plugins = PLUGINS.dct()
 
-        if not (len(plugins) == 1 and 'pm' in plugins):
-            content += '更新插件：\n'
-            await message.edit(content)
+        match args.get(2):
+            case 'plugin':
+                if not (len(plugins) == 1 and 'pm' in plugins):
+                    content += '更新插件：\n'
+                    await message.edit(content)
 
-            for plugin in plugins:
-                if plugins[plugin]['type'] != 'sys':
-                    if plugin in dct:
-                        if plugins[plugin]['ver'] != dct[plugin]['ver']:
-                            content += f"`{plugin}`...\n"
-                            await message.edit(content)
-                            if await install(dct[plugin]['url'], plugin):
-                                content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓：更新成功~ \n")
-                                await message.edit(content)
-                            else:
-                                content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗：更新失败~ \n")
-                                await message.edit(content)
-                        else:
-                            content += f"`{plugin}`：暂无更新~ \n"
-                            await message.edit(content)
-                    await asyncio.sleep(1)
+                    for plugin in plugins:
+                        if plugins[plugin]['type'] != 'sys':
+                            if plugin in dct:
+                                if plugins[plugin]['ver'] != dct[plugin]['ver']:
+                                    content += f"`{plugin}`...\n"
+                                    await message.edit(content)
+                                    if await install(dct[plugin]['url'], plugin):
+                                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✓：更新成功~ \n")
+                                        await message.edit(content)
+                                    else:
+                                        content = content.replace(f"`{plugin}`...\n", f"`{plugin}`...✗：更新失败~ \n")
+                                        await message.edit(content)
+                                else:
+                                    content += f"`{plugin}`：暂无更新~ \n"
+                                    await message.edit(content)
+                            await asyncio.sleep(1)
 
-        content += '\n更新程序中...'
-        await message.edit(content)
-        try:
-            update = git.cmd.Git(base_dir)
-            result = update.pull()
-            if result == 'Already up to date.':
-                content = content.replace('\n更新程序中...', '\n程序暂无更新~')
-            elif result.find("Fast-forward") > -1:
-                content = content.replace('\n更新程序中...', f'''\n更新完成，即将重启：\n```{result}```''')
+            case _:
+                content += '\n更新程序中...'
                 await message.edit(content)
-                await del_msg(message, 3)
-                restart()
-            else:
-                content = content.replace('\n更新程序中...', f'''\n更新出错：\n```{result}```''')
-        except Exception as e:
-            content = content.replace('\n更新程序中...', f'''\n更新出错：```\n{e}```''')
-        await message.edit(content)
-        await del_msg(message)
+                try:
+                    update = git.cmd.Git(base_dir)
+                    result = update.pull()
+                    if result == 'Already up to date.':
+                        content = content.replace('\n更新程序中...', '\n程序暂无更新~')
+                    elif result.find("Fast-forward") > -1:
+                        content = content.replace('\n更新程序中...', f'''\n更新完成，即将重启：\n```{result}```''')
+                        await message.edit(content)
+                        await del_msg(message, 3)
+                        restart()
+                    else:
+                        content = content.replace('\n更新程序中...', f'''\n更新出错：\n```{result}```''')
+                except Exception as e:
+                    content = content.replace('\n更新程序中...', f'''\n更新出错：```\n{e}```''')
+                await message.edit(content)
+                await del_msg(message)
 
     async def get_help(content):
         if not args.get(2):

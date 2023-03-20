@@ -8,7 +8,7 @@ from os import path, mkdir, getenv
 from pyrogram import Client
 from convopyro import Conversation
 
-version = "4.4"
+version = "4.4.1"
 
 def check_dir(directory):
     if not path.exists(directory):
