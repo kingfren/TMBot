@@ -392,7 +392,9 @@ async def handler(client, message):
                 return
             await msg.delete()
 
-            if msg.text in conf:
+            if msg.text not in conf:
+                return await del_msg(await message.edit(content + "配置不存在~"))
+            else:
                 me = await client.get_me()
                 if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
                     return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
@@ -405,8 +407,10 @@ async def handler(client, message):
 
             try:
                 global sections
-                sections = json.loads((msg.text).replace("'","\""))
-            except Exception:
+                print((msg.text).replace("\'","\""))
+                sections = json.loads((msg.text).replace("\'","\""))
+            except Exception as e:
+                print(e)
                 await del_msg(await message.edit(content + "格式错误，请重试~"))
                 return
             else:
