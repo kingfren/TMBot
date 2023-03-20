@@ -368,12 +368,12 @@ async def handler(client, message):
 
         _filter = filters.create(func)
 
-        async def listen():
+        async def listen(x):
             msg = await client.listen.Message(_filter, filters.user(message.from_user.id), timeout = 300)
             if msg:
                 await client.listen.Cancel(filters.user(message.from_user.id))
-                return msg
-            return False
+                return x, msg
+            return x, False
 
         conf.read(config)
         text = str()
@@ -385,40 +385,39 @@ async def handler(client, message):
             text += f"`{i}`{desc}\n"
         await message.edit(content + f"请选一个配置回复进行编辑：\n{text}")
 
-        while True:
-            msg = await listen()
+        for x in range(1):
+            i, msg = await listen(x)
             if not msg:
                 await del_msg(await message.edit(content + "回复超时，请重试~"))
                 return
             await msg.delete()
 
-            if msg.text not in conf:
-                return await del_msg(await message.edit(content + "配置不存在~"))
-            else:
-                me = await client.get_me()
-                if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
-                    return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
+            if i == 0:
+                if msg.text in conf:
+                    me = await client.get_me()
+                    if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
+                        return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
 
-                global section
-                section = msg.text
-                dct = {x:y for x,y in conf.items(msg.text)}
-                await message.edit(content + f"请按照如下格式回复新配置：\n`{dct}`")
-                continue
-
-            try:
-                global sections
-                print((msg.text).replace("\'","\""))
-                sections = json.loads((msg.text).replace("\'","\""))
-            except Exception as e:
-                print(e)
-                await del_msg(await message.edit(content + "格式错误，请重试~"))
-                return
-            else:
-                conf[section] = sections
-                with open(config, 'w') as configfile:
-                    conf.write(configfile)
-                await del_msg(await message.edit(content + "修改完成，部分配置需重启后生效~"))
-                return
+                    global section
+                    section = msg.text
+                    dct = {x:y for x,y in conf.items(msg.text)}
+                    await message.edit(content + f"请按照如下格式回复新配置：\n`{dct}`")
+                    continue
+                else:
+                    return await del_msg(await message.edit(content + "配置不存在~"))
+            if i == 1:
+                try:
+                    global sections
+                    sections = json.loads((msg.text).replace("\'","\""))
+                except Exception as e:
+                    await del_msg(await message.edit(content + "格式错误，请重试~"))
+                    return
+                else:
+                    conf[section] = sections
+                    with open(config, 'w') as configfile:
+                        conf.write(configfile)
+                    await del_msg(await message.edit(content + "修改完成，部分配置需重启后生效~"))
+                    return
 
     match args.get(1):
         case 'help':
