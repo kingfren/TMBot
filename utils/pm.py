@@ -5,6 +5,7 @@ import sys
 import git
 import asyncio
 import requests
+import importlib
 from pathlib import Path
 from ast import literal_eval
 from bs4 import BeautifulSoup
@@ -44,6 +45,7 @@ def get_plugins():
     return dct
 
 async def install(url, plugin):
+    flag = plugin in PLUGINS.dct()
     content = get_url(url)
     packages = re.search('(?<=(Packages\((\'|\"))).+(?=(\'|\")\))', content)
     if packages:
@@ -54,10 +56,19 @@ async def install(url, plugin):
     root = 'data/plugins'
     path = Path(root, plugin)
     module_path = '.'.join(path.parent.parts + (path.stem,))
-    if import_plugin(module_path):
-        return True
+
+    if flag:
+        try:
+            importlib.reload(sys.modules[module_path])
+            return True
+        except Exception as e:
+            logger.error(f"reload error: {module_path}:\n{e}")
+            return False
     else:
-        return False
+        if import_plugin(module_path):
+            return True
+        else:
+            return False
 
 def plist():
     lst = []
