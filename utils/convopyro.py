@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# https://github.com/keyiflerolsun/pyroConversation
+# https://github.com/kadirilgin1453/Conversation-Pyrogram
 #
 from collections import OrderedDict
 from typing import Union, List
@@ -11,20 +11,15 @@ class Conversation():
     A conversation plugin class for pyrogram using inbuild Update Handlers.
     Complete list of handlers to be used without `Handlers` postfix :-
         https://docs.pyrogram.org/api/handlers#index
-
-
     Usage:
         In main.py where `Client` is initialized:
-
             app = Client('MyBot')
             Conversation(app) # That's it!
         
         Then just use inside any handler `client.listen`:
-
             @app.on_message()
             def button_click(client, update):
                 answer = client.listen.CallbackQuery(filters.user(update.from_user.id))
-
     Method client.listen.Message(or any other types)
         Parameters:
             filters: 
@@ -38,12 +33,10 @@ class Conversation():
                     -> pyrogram.filters.chat
                     -> str
                 if pyrogram filter's `user` or `chat` is passed as `id` then it gets combined with rest `filters`.
-
                 Default is `None` but either filter or id is required.
             
             timeout:
                 In seconds (int) for waiting time of getting a response.
-
         Returns:
             `update` (like pyrogram.types.Message ...etc) if user reponded within given conditions.
             `None`  if listen cancelled using `listen.Cancel`
@@ -56,7 +49,6 @@ class Conversation():
             if reply_msg:
                 reply_msg.reply(f'hello {reply_msg.text}')
     
-
     Method client.listen.Cancel
         Parameters:
             id:
@@ -116,9 +108,9 @@ class Conversation():
 
         try:
             await asyncio.wait_for(event.wait(), timeout)
-        except asyncio.exceptions.TimeoutError as e:
+        except asyncio.exceptions.TimeoutError:
             await self.__remove(dump._id)
-            #raise asyncio.exceptions.TimeoutError
+            raise asyncio.exceptions.TimeoutError
         finally:
             result = self.handlers.pop(dump._id, None)
             self.hdlr_lock.release()
@@ -149,9 +141,9 @@ from asyncio.exceptions import TimeoutError
 
 async def listen_message(client:Client, chat_id:Union[int, str, List[Union[int, str]]], timeout:Union[int, None]=None) -> Union[Message, None]:
     try:
-        return await client.listen.Message(filters.chat(chat_id), timeout=timeout)
+        return await client.listen.Message(filters.chat(chat_id), timeout=timeout,id=filters.chat(chat_id))
     except TimeoutError:
         return None
 
-async def stop_listen(client:Client, chat_id:Union[int, str, List[Union[int, str]]]) -> bool:
+async def cancel_listen(client:Client, chat_id:Union[int, str, List[Union[int, str]]]) -> bool:
     return await client.listen.Cancel(filters.chat(chat_id))
