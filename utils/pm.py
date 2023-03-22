@@ -226,7 +226,7 @@ async def handler(client, message):
     async def update(content):
         dct = get_plugins()
 
-        if len(cmd) >= 2:
+        if len(cmd) > 2:
             if cmd[2] == "plugin":
                 if not (len(plugins) == 1 and 'pm' in plugins):
                     content += '更新插件：\n'
