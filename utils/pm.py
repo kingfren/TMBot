@@ -226,8 +226,8 @@ async def handler(client, message):
     async def update(content):
         dct = get_plugins()
 
-        match cmd[2]:
-            case 'plugin':
+        if len(cmd) >= 2:
+            if cmd[2] == "plugin":
                 if not (len(plugins) == 1 and 'pm' in plugins):
                     content += '更新插件：\n'
                     await message.edit(content)
@@ -252,7 +252,7 @@ async def handler(client, message):
                 else:
                     await del_msg(await message.edit(content + "未装插件~"))
 
-            case _:
+            else:
                 content += '\n更新程序中...'
                 await message.edit(content)
                 try:
