@@ -18,12 +18,6 @@ from utils.config import client, version, prefix, base_dir, plugins_dir, conf, c
 
 from pyrogram import filters
 
-def get_args(mgs):
-    args = {}
-    for i, arg in enumerate(mgs.text.strip().split()):
-        args[i] = arg
-    return args
-
 def restart():
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -78,7 +72,11 @@ def plist():
     plugins = PLUGINS.dct()
     for plugin in plugins:
         if plugins[plugin]['type'] in ['cmd', 'sys']:
-            lst.append(plugins[plugin]['cmd'])
+            if isinstance(plugins[plugin]['cmd'], list):
+                for i in plugins[plugin]['cmd']:
+                    lst.append(i)
+            else:
+                lst.append(plugins[plugin]['cmd'])
         if plugins[plugin]['type'] != 'sys':
             lst.append(plugins[plugin]['name'])
     return lst
@@ -114,12 +112,12 @@ async def handler(client, message):
     `pm del all`
 
 8、修改配置：
-    `pm set <插件名>`
+    `pm set`
 
 9、重启：
 `pm restart`
     '''
-    args = get_args(message)
+    cmd = message.command
     content = f'🤖 **TMBot v{version}**\n'
     content += f'▍ `{message.text}`\n\n'
     plugins = PLUGINS.dct()
@@ -147,14 +145,6 @@ async def handler(client, message):
         await del_msg(message, 60)
 
     async def add(content):
-        for i in list(args.keys())[:2]:
-            del args[i]
-
-        if not args:
-            content += '缺少参数~'
-            await message.edit(content)
-            return
-
         await message.edit(content + "获取插件中...")
 
         dct = get_plugins()
@@ -167,7 +157,7 @@ async def handler(client, message):
 
         content += f"安装：\n"
         await message.edit(content)
-        if args.get(2) == 'all':
+        if cmd[2] == 'all':
             for i in dct:
                 content += f"`{i}`...\n"
                 await message.edit(content)
@@ -184,7 +174,7 @@ async def handler(client, message):
                 await asyncio.sleep(1)
             await message.edit(content + f'\n发送 `{prefix}pm` 获取帮助~')
         else:
-            for i in list(args.values()):
+            for i in cmd[2:]:
                 if i in lst:
                     content += f"`{i}`...\n"
                     await message.edit(content)
@@ -207,24 +197,20 @@ async def handler(client, message):
         await del_msg(message)
 
     async def delete(content):
-        if not args.get(2):
-            content += '缺少参数~'
-            await message.edit(content)
-            return
-        plugins = PLUGINS.dct()
-        if args.get(2) and args.get(2) == 'all':
+        if cmd[2] == 'all':
             await message.edit(content + '即将删除所有插件~\n')
             for plugin in list(plugins):
                 if plugins[plugin]['type'] != 'sys':
                     PLUGINS.delete(plugin)
             await message.edit(content + '已删除所有插件~\n')
 
-        elif args.get(2) and args.get(2).replace(prefix, "") in plist():
+        elif cmd[2].replace(prefix, "") not in plist():
+            return await del_msg(await message.edit(content + f'`{cmd[2]}` 不存在~' ))
+        else:
             for plugin in plugins:
-                if args.get(2).replace(prefix, "") == plugins[plugin]['name'] or args.get(2).replace(prefix, "") == plugins[plugin]['cmd']:
+                if cmd[2].replace(prefix, "") == plugins[plugin]['name'] or cmd[2].replace(prefix, "") == plugins[plugin]['cmd']:
                     if plugins[plugin]['type'] == 'sys':
-                        await message.edit(content + f"系统插件 {arg} 无法删除~")
-                        return
+                        return await del_msg(await message.edit(content + f"系统插件 {arg} 无法删除~"))
                     content += f"删除插件 `{plugin}`...\n"
                     await message.edit(content)
                     await asyncio.sleep(2)
@@ -235,20 +221,12 @@ async def handler(client, message):
                         PLUGINS.delete(plugin)
                         break
             content = content.replace(f"删除插件 `{plugin}`...\n", f"已删除插件：`{plugin}`\n")
-            await message.edit(content)
-
-        else:
-            content += f'`{args.get(2)}` 不存在~' 
-            await message.edit(content)
-
-        await del_msg(message)
-
+            await del_msg(await message.edit(content))
 
     async def update(content):
         dct = get_plugins()
-        plugins = PLUGINS.dct()
 
-        match args.get(2):
+        match cmd[2]:
             case 'plugin':
                 if not (len(plugins) == 1 and 'pm' in plugins):
                     content += '更新插件：\n'
@@ -278,8 +256,7 @@ async def handler(client, message):
                 content += '\n更新程序中...'
                 await message.edit(content)
                 try:
-                    update = git.cmd.Git(base_dir)
-                    result = update.pull()
+                    result = git.cmd.Git(base_dir).pull()
                     if result == 'Already up to date.':
                         content = content.replace('\n更新程序中...', '\n程序暂无更新~')
                     elif result.find("Fast-forward") > -1:
@@ -295,16 +272,9 @@ async def handler(client, message):
                 await del_msg(message)
 
     async def get_help(content):
-        if not args.get(2):
-            content += '缺少参数~'
-            await message.edit(content)
-            return
-
-        plugin = args.get(2).replace(prefix,"")
+        plugin = cmd[2].replace(prefix,"")
         if plugin not in plist():
-            content += f'`{args.get(2)}` 不存在~'
-            await message.edit(content)
-            return
+            return await del_msg(await message.edit(content + f'`{cmd[2]}` 不存在~'))
 
         if not plugins.get(plugin):
             for i in plugins:
@@ -312,10 +282,20 @@ async def handler(client, message):
                     plugin = plugins[i]['name']
                     break
 
-        content += f'**{args.get(2)}** 的信息：\n\n'
+                if isinstance(plugins[i]['cmd'], list):
+                    if plugin in plugins[i]['cmd']:
+                        plugin = plugins[i]['name']
+                        break
+
+        content += f'**{cmd[2]}** 的信息：\n\n'
 
         if plugins[plugin]['type'] in ['sys', 'cmd']:
-            content += f"命令：`{prefix}{plugins[plugin]['cmd']}`\n"
+            if isinstance(plugins[plugin]['cmd'], list):
+                content += f"命令：\n"
+                for i in plugins[plugin]['cmd']:
+                    content += f"`{prefix}{i}`\n"
+            else:
+                content += f"命令：`{prefix}{plugins[plugin]['cmd']}`\n"
 
         content += f"版本需求：`{plugins[plugin]['ver']}`\n"
         content += f"插件名：`{plugins[plugin]['name']}`\n\n"
@@ -334,7 +314,11 @@ async def handler(client, message):
             if plugins[plugin]['type'] == 'sys':
                 sys[plugins[plugin]['cmd']] = plugins[plugin]['help']
             if plugins[plugin]['type'] == 'cmd':
-                cmds[plugins[plugin]['cmd']] = plugins[plugin]['help']
+                if isinstance(plugins[plugin]['cmd'], list):
+                    for i in plugins[plugin]['cmd']:
+                        cmds[i] = plugins[plugin]['help']
+                else:
+                    cmds[plugins[plugin]['cmd']] = plugins[plugin]['help']
             if plugins[plugin]['type'] == 'msg':
                 msgs[plugins[plugin]['name']] = plugins[plugin]['help']
             if plugins[plugin]['type'] == 'sched':
@@ -395,7 +379,7 @@ async def handler(client, message):
             if i == 0:
                 if msg.text in conf:
                     me = await client.get_me()
-                    if "only_me" in conf[msg.text] and conf.getboolean(msg.text, 'only_me') and message.chat.id != me.id :
+                    if "only_me" in conf[msg.text] and conf.getboolean(msg.text, "only_me") and message.chat.id != me.id :
                         return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
 
                     global section
@@ -404,6 +388,7 @@ async def handler(client, message):
                     await message.edit(content + f"请按照如下格式回复新配置：\n`{dct}`")
                 else:
                     return await del_msg(await message.edit(content + "配置不存在~"))
+
             if i == 1:
                 try:
                     global sections
@@ -415,24 +400,34 @@ async def handler(client, message):
                     conf[section] = sections
                     with open(config, 'w') as configfile:
                         conf.write(configfile)
-                    await del_msg(await message.edit(content + "修改完成，部分配置需重启后生效~"))
+                    await del_msg(await message.edit(content + "配置修改完成，部分配置需重启后生效~"))
                     return
 
-    match args.get(1):
+    async def len_cmd():
+        if len(cmd) <= 2:
+            await del_msg(await message.edit(content + '缺少参数~'))
+            return False
+        return True
+
+
+    match cmd[1] if len(cmd) > 1 else cmd[0]:
         case 'help':
-            await get_help(content)
+            if await len_cmd() is True:
+                await get_help(content)
         case 'update':
             await update(content)
         case 'list':
             await get_list(content)
         case 'add':
-            await add(content)
+            if await len_cmd() is True:
+                await add(content)
         case 'del':
-            await delete(content)
+            if await len_cmd() is True:
+                await delete(content)
         case 'set':
             await setting(content)
         case 'restart':
-            await del_msg(message, 1)
+            await del_msg(await message.edit(content + '即将重启~'), 1)
             restart()
         case _:
             await pm(content)
