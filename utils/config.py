@@ -9,7 +9,7 @@ from pyrogram import Client
 
 from utils.convopyro import Conversation
 
-version = "4.5.2"
+version = "4.5.3"
 
 def check_dir(directory):
     if not path.exists(directory):

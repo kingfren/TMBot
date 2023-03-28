@@ -346,6 +346,10 @@ async def handler(client, message):
         await del_msg(message)
 
     async def setting(content):
+        me = await client.get_me()
+        if message.chat.id != me.id :
+            return await del_msg(await message.edit(content + "配置仅允许在 Saved Messages 里编辑~"))
+
         async def func(_, __, m):
             if m.reply_to_message:
                 return m.reply_to_message_id == message.id
@@ -378,10 +382,6 @@ async def handler(client, message):
 
             if i == 0:
                 if msg.text in conf:
-                    me = await client.get_me()
-                    if "only_me" in conf[msg.text] and conf.getboolean(msg.text, "only_me") and message.chat.id != me.id :
-                        return await del_msg(await message.edit(content + "此部分配置仅允许在 Saved Messages 里编辑~"))
-
                     global section
                     section = msg.text
                     dct = {x:y for x,y in conf.items(msg.text)}
@@ -400,7 +400,7 @@ async def handler(client, message):
                     conf[section] = sections
                     with open(config, 'w') as configfile:
                         conf.write(configfile)
-                    await del_msg(await message.edit(content + "配置修改完成，部分配置需重启后生效~"))
+                    await del_msg(await message.edit(content + "配置修改完成，部分配置需重启后生效。重启命令：`pm restart`"))
                     return
 
     async def len_cmd():
