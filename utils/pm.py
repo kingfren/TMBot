@@ -93,13 +93,13 @@ async def handler(client, message):
 3、升级程序：
 `pm update`
 
-4、升级插件：
+4、升级已安装插件：
 `pm update plugin`
 
 5、获取可用插件列表：
 `pm list`
 
-6、安装插件：
+6、安装/升级插件：
     安装部分插件：
     `pm add <插件 1> <插件 2> <插件 3>`
     安装所有插件：
