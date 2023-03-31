@@ -100,7 +100,7 @@ async def handler(client, message):
 `pm list`
 
 6、安装/升级插件：
-    安装部分插件：
+    安装/升级部分插件：
     `pm add <插件 1> <插件 2> <插件 3>`
     安装所有插件：
     `pm add all`
